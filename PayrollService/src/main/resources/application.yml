@@ -1,0 +1,14 @@
+server:
+  port: 3030
+spring:
+  application:
+    name: Payrollsystem
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/payrolldb?createDatabaseIfNotExist=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password:

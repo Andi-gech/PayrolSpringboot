@@ -1,0 +1,15 @@
+server:
+ port: 2727
+
+spring:
+ application:
+  name: AttendanceSystem
+
+ datasource:
+  url: jdbc:mysql://localhost:3306/Attendance?createDatabaseIfNotExist=true
+  username: root
+  password:
+
+ jpa:
+  hibernate:
+   ddl-auto: update

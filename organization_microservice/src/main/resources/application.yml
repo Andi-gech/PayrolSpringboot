@@ -1,0 +1,14 @@
+server:
+  port: 4040
+spring:
+  application:
+    name: ORsystem
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/orsystem?createDatabaseIfNotExist=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password:
