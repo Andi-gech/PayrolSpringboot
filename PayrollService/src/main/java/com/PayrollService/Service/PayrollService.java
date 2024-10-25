@@ -1,5 +1,8 @@
 package com.PayrollService.Service;
 
+import com.PayrollService.Dto.AttendanceDto;
+import com.PayrollService.Dto.DeductionResultDTO;
+import com.PayrollService.Dto.Deductions;
 import com.PayrollService.Dto.Employeedto;
 import com.PayrollService.Exceptions.BadRequestException;
 import com.PayrollService.Model.PayrollModel;
@@ -7,7 +10,10 @@ import com.PayrollService.Repository.PayrollRepository;
 
 import com.PayrollService.utils.PayroleCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -31,7 +37,7 @@ public class PayrollService {
 
 
 
-    public PayrollModel createPayroll(PayrollModel payroll) {
+    public PayrollModel createPayroll(PayrollModel payroll, int year, int month) {
         validateEmployeeId(payroll.getEmployeeId());
 
         checkForExistingPayroll(payroll.getEmployeeId(),payroll.getPayPeriodStart(), payroll.getPayPeriodEnd());
@@ -39,15 +45,31 @@ public class PayrollService {
 
         Employeedto employee = fetchEmployeeOrThrow(payroll.getEmployeeId());
         updatePayrollWithEmployeeDetails(payroll, employee);
+        String deductionurl="http://localhost:4040/api/deductions";
+        String attendanceurl="http://localhost:2727/api/attendance/"+employee.getId()+"/"+year+"/"+month;
+
+        List<Deductions> deductions = fetchDeductions(deductionurl);
+        List<AttendanceDto> attendance=fetchAttendance(attendanceurl);
+
+        System.out.print(attendance);
+
 
         double baseSalary = employee.getSalary() != null ? employee.getSalary() : 0.0;
+        double absentdeduction=calculator.getAbsentDeduction(attendance,baseSalary);
+        payroll.setAbsentdeduction(BigDecimal.valueOf(absentdeduction));
+
+        DeductionResultDTO DeductionsResult=calculator.calculateDeductions( baseSalary, deductions);
+        System.out.println("deduction from salary"+DeductionsResult.getTotalDeductions());
         double incomeTax = calculator.calculateIncomeTax(baseSalary);
         double pensionTax = calculator.calculatePensionContribution(baseSalary, "public").doubleValue();
 
-        BigDecimal netPay = calculateNetPay(baseSalary, incomeTax, pensionTax);
+        BigDecimal netPay = calculateNetPay(baseSalary, incomeTax, pensionTax,DeductionsResult.getTotalDeductions(),absentdeduction);
         payroll.setNetPay(netPay);
+        payroll.setPensionDeduction(BigDecimal.valueOf(pensionTax));
+        payroll.setTaxDeduction(BigDecimal.valueOf(incomeTax));
+        payroll.setDeductionDetails(DeductionsResult.getDeductionList());
 
-        payroll.setDeductions(BigDecimal.valueOf(incomeTax + pensionTax));
+        payroll.setTotalDeductions(BigDecimal.valueOf(incomeTax + pensionTax+ DeductionsResult.getTotalDeductions()+absentdeduction));
         payroll.setGrossPay(calculateGrossPay(baseSalary, payroll));
 
         return payrollRepository.save(payroll);
@@ -89,7 +111,24 @@ public class PayrollService {
             return null;
         }
     }
-
+    private List<Deductions> fetchDeductions(String deductionUrl) {
+        ResponseEntity<List<Deductions>> responseEntity = restTemplate.exchange(
+                deductionUrl,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<Deductions>>() {}
+        );
+        return responseEntity.getBody();
+    }
+    private List<AttendanceDto> fetchAttendance(String attendanceUrl) {
+        ResponseEntity<List<AttendanceDto>> responseEntity = restTemplate.exchange(
+                attendanceUrl,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<AttendanceDto>>() {}
+        );
+        return responseEntity.getBody();
+    }
     private void handleEmployeeFetchError(Long employeeId, HttpClientErrorException e) {
         if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
             throw new BadRequestException("Employee not found for IDr: " + employeeId);
@@ -99,12 +138,12 @@ public class PayrollService {
 
     private void updatePayrollWithEmployeeDetails(PayrollModel payroll, Employeedto employee) {
         payroll.setEmployeeId(employee.getId());
-        payroll.setBaseSalary(BigDecimal.valueOf(employee.getSalary()));
+
     }
 
-    private BigDecimal calculateNetPay(double baseSalary, double incomeTax, double pensionTax) {
+    private BigDecimal calculateNetPay(double baseSalary, double incomeTax, double pensionTax,double totaldeduction,double absentdeduction) {
         return BigDecimal.valueOf(baseSalary)
-                .subtract(BigDecimal.valueOf(incomeTax + pensionTax));
+                .subtract(BigDecimal.valueOf(incomeTax + pensionTax +absentdeduction+totaldeduction));
     }
 
     private BigDecimal calculateGrossPay(double baseSalary, PayrollModel payroll) {
@@ -140,11 +179,10 @@ public class PayrollService {
         PayrollModel existingPayroll = payrollRepository.findById(id).get();
         existingPayroll.setPayPeriodStart(payrollDetails.getPayPeriodStart());
         existingPayroll.setPayPeriodEnd(payrollDetails.getPayPeriodEnd());
-        existingPayroll.setBaseSalary(payrollDetails.getBaseSalary());
+
         existingPayroll.setOvertimeHours(payrollDetails.getOvertimeHours());
         existingPayroll.setOvertimePay(payrollDetails.getOvertimePay());
         existingPayroll.setBonuses(payrollDetails.getBonuses());
-        existingPayroll.setDeductions(payrollDetails.getDeductions());
         existingPayroll.setGrossPay(payrollDetails.getGrossPay());
         existingPayroll.setNetPay(payrollDetails.getNetPay());
         existingPayroll.setPayDate(payrollDetails.getPayDate());

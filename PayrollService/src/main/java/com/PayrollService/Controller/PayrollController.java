@@ -17,11 +17,13 @@ public class PayrollController {
     private PayrollService payrollService;
 
     // Create a new payroll record
-    @PostMapping
-    public ResponseEntity<PayrollModel> createPayroll(@RequestBody PayrollModel payroll) {
-        PayrollModel newPayroll = payrollService.createPayroll(payroll);
+    @PostMapping("/api/payrolls/{year}/{month}")
+    public ResponseEntity<PayrollModel> createPayroll(@RequestBody PayrollModel payroll, @PathVariable int year, @PathVariable int month) {
+        PayrollModel newPayroll = payrollService.createPayroll(payroll, year, month);
         return ResponseEntity.ok(newPayroll);
     }
+
+
 
     // Get payroll by ID
     @GetMapping("/{id}")

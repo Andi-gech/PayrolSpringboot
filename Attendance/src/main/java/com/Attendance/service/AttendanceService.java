@@ -81,6 +81,13 @@ public class AttendanceService {
                 .filter(a -> !a.getDate().isBefore(startDate) && !a.getDate().isAfter(endDate))
                 .collect(Collectors.toList());
     }
+    public List<AttendanceModel> findEachAttendanceByMonth(int empid,int year, int month) {
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+        return attendanceRepository.findByEmployeeId(Long.valueOf(empid)).stream()
+                .filter(a -> !a.getDate().isBefore(startDate) && !a.getDate().isAfter(endDate))
+                .collect(Collectors.toList());
+    }
 
     public AttendanceModel createOrUpdateAttendance(AttendanceDto attendanceDto) {
         // Try to find the attendance record with the same employeeId and date

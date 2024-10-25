@@ -23,6 +23,10 @@ public class AttendanceController {
     public List<AttendanceModel> getAttendance(@PathVariable int year, @PathVariable int month) {
         return attendanceService.findAttendanceByMonth(year, month);
     }
+    @GetMapping("{empid}/{year}/{month}")
+    public List<AttendanceModel> getAttendance(@PathVariable int empid,@PathVariable int year, @PathVariable int month) {
+        return attendanceService.findEachAttendanceByMonth(empid,year,month);
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<AttendanceModel> getAttendanceById(@PathVariable Long id) {

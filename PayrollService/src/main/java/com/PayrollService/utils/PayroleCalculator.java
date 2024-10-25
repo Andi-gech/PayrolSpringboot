@@ -1,6 +1,13 @@
 package com.PayrollService.utils;
 
+import com.PayrollService.Dto.AttendanceDto;
+import com.PayrollService.Dto.DeductionResultDTO;
+import com.PayrollService.Dto.Deductions;
+import com.PayrollService.Model.DeductionSalary;
+
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 public class  PayroleCalculator {
 
@@ -55,8 +62,44 @@ public class  PayroleCalculator {
 
         return BigDecimal.valueOf(employeeContribution + employerContribution);
     }
+    public DeductionResultDTO calculateDeductions(double salary, List<Deductions> deductions) {
+        double totalDeductions = 0.0;
+        List<DeductionSalary> deductionList = new ArrayList<>(); // List to hold deductions
+
+        System.out.println(deductions); // Changed print to println for clarity
+
+        // Iterate through each deduction and sum them up based on percentage
+        for (Deductions deduction : deductions) {
+            double deductionAmount = salary * (deduction.getPercentage() / 100);
+            totalDeductions += deductionAmount;
+
+            // Add the deduction details to the list
+            deductionList.add(new DeductionSalary(deduction.getName(), deductionAmount));
+        }
+
+        // Return total deductions and the list of deduction details
+        return new DeductionResultDTO(totalDeductions, deductionList);
+    }
+
+    public double getAbsentDeduction(List<AttendanceDto> attendance, double baseSalary) {
+        // Define the expected working days
+        int expectedWorkDays = 24;
+
+        // Count the number of present days
+        long presentDays = attendance.stream()
+                .filter(a -> a.getStatus().equals("PRESENT"))
+                .count();
+
+        // Calculate absent days
+        long absentDays = expectedWorkDays - presentDays;
+
+        // Calculate the absent deduction
+        double dailyDeductionRate = 0.01; // 1% per day
+        double absentDeduction = absentDays * dailyDeductionRate * baseSalary;
 
 
 
+        return absentDeduction;
+    }
 
 }
