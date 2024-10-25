@@ -40,11 +40,11 @@ public class AttendanceService {
             AttendanceModel attendance = new AttendanceModel();
 
             // URLs to fetch employee and department details
-            String employeeUrl = "http://localhost:5555/api/v1/employee/" + attendanceDto.getEmployeeId();
-            String departmentUrl = "http://localhost:4040/api/v1/department/" + attendanceDto.getDepartmentId();
+            String employeeUrl = "http://192.168.0.103:5555/api/v1/employee/" + attendanceDto.getEmployeeId();
+            String departmentUrl = "http://192.168.0.103:4040/api/departments/" + attendanceDto.getDepartmentId();
 
             // Fetch employee and department details
-            EmployeeDto employee = restTemplate.getForObject(employeeUrl, EmployeeDto.class);
+            EmployeeDto employee = restTemplate.getForObject(employeeUrl, EmployeeDto. class);
             Depdto department = restTemplate.getForObject(departmentUrl, Depdto.class);
 
             // Check if both employee and department exist
@@ -82,12 +82,22 @@ public class AttendanceService {
                 .collect(Collectors.toList());
     }
 
-    public AttendanceModel updateAttendance(Long id, AttendanceDto attendanceDto) {
-        AttendanceModel attendance = attendanceRepository.findById(id).orElseThrow();
+    public AttendanceModel createOrUpdateAttendance(AttendanceDto attendanceDto) {
+        // Try to find the attendance record with the same employeeId and date
+        AttendanceModel attendance = attendanceRepository.findByEmployeeIdAndDate(
+                        attendanceDto.getEmployeeId(), attendanceDto.getDate())
+                .orElse(new AttendanceModel());  // If not found, create a new instance
 
+        // Set the fields based on the AttendanceDto
+        attendance.setEmployeeId(attendanceDto.getEmployeeId());
+        attendance.setDepartmentId(attendanceDto.getDepartmentId());  // Corrected department field
         attendance.setStatus(attendanceDto.getStatus().name());
+        attendance.setDate(attendanceDto.getDate());
+
+        // Save and return the updated or newly created attendance record
         return attendanceRepository.save(attendance);
     }
+
 
     public void deleteAttendance(Long id) {
         attendanceRepository.deleteById(id);

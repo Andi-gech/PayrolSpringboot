@@ -8,8 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
+
 @RequestMapping("/api/attendance")
 public class AttendanceController {
     @Autowired
@@ -18,10 +19,11 @@ public class AttendanceController {
 
 
 
-    @GetMapping
-    public List<AttendanceModel> getAttendance(@RequestParam int year, @RequestParam int month) {
+    @GetMapping("/{year}/{month}")
+    public List<AttendanceModel> getAttendance(@PathVariable int year, @PathVariable int month) {
         return attendanceService.findAttendanceByMonth(year, month);
     }
+
     @GetMapping("/{id}")
     public ResponseEntity<AttendanceModel> getAttendanceById(@PathVariable Long id) {
         return attendanceService.getAttendanceById(id)
@@ -34,9 +36,10 @@ public class AttendanceController {
         return attendanceService.createAttendance(attendanceDto);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<AttendanceModel> updateAttendance(@PathVariable Long id, @RequestBody AttendanceDto attendanceDto) {
-        return ResponseEntity.ok(attendanceService.updateAttendance(id, attendanceDto));
+    @PostMapping("/createOrUpdate") 
+    public ResponseEntity<AttendanceModel> createOrUpdateAttendance(@RequestBody AttendanceDto attendanceDto) {
+        AttendanceModel attendance = attendanceService.createOrUpdateAttendance( attendanceDto);
+        return ResponseEntity.ok(attendance);
     }
 
     @DeleteMapping("/{id}")

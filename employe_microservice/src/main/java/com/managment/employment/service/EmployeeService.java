@@ -22,7 +22,7 @@ public class EmployeeService {
 
     public Employee addEmployee(Employee employee) {
         // Define the URL for the department service
-        String departmentServiceUrl = "http://localhost:4040/api/departments/" + employee.getDepartmentId();
+        String departmentServiceUrl = "http://192.168.0.103:4040/api/departments/" + employee.getDepartmentId();
 
         // Use RestTemplate to get the Department from the department microservice
         Departmentdto department = restTemplate.getForObject(departmentServiceUrl, Departmentdto.class);

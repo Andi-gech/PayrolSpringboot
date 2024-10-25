@@ -1,5 +1,6 @@
 server:
   port: 4040
+  address: 192.168.0.103
 spring:
   application:
     name: ORsystem
